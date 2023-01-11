@@ -19,10 +19,20 @@ Adafruit_MPU6050 mpu;
 
 bool mustInit = true;
 vec3_t accPrev;
-float movement = 0;
+float averageMovement = 0;
+float averagePeak = 0;
+
+float satiety = 0;
+float deltaTime = 0;
+unsigned long ms = 0;
+unsigned long lastMs = 0;
 
 void setup(void) {
+
+  
   Serial.begin(115200);
+
+  Serial.print("Raw\tAvg\tPeak\tSatiety");
   while (!Serial)
     delay(10); // will pause Zero, Leonardo, etc until serial console opens
 
@@ -33,9 +43,16 @@ void setup(void) {
   Serial.println("");
   delay(100);
   
+  
 }
 
 void loop() {
+
+  // Time management
+  ms = millis();
+  deltaTime = (ms - lastMs) / 1000.0;
+  lastMs = ms;
+
 
   /* Get new sensor events with the readings */
   sensors_event_t a, g, temp;
@@ -50,7 +67,22 @@ void loop() {
 
     vec3_t vChange = acc - accPrev;
     instantMove = vChange.mag();
-    movement += (instantMove - movement) * 0.05;
+
+    // some kind of average value
+    averageMovement += (instantMove - averageMovement) * 0.01;
+
+    // Average peak
+    averagePeak -= 0.01;
+    averagePeak = max(averagePeak, averageMovement);
+
+    // Movement increase satiety
+    float satietyIncreaseSpeed = 200;
+    satiety += instantMove * satietyIncreaseSpeed * deltaTime;
+
+    // Time decrease satiety
+    float satietyDecreaseSpeed = 10; // unités / seconde
+    satiety = max(0, satiety - satietyDecreaseSpeed * deltaTime);
+    
   
     accPrev = acc;
   }
@@ -66,9 +98,17 @@ void loop() {
 //  Serial.print(a.acceleration.z);
 //  Serial.print(" m/s^2");
 //  Serial.print("\t");
+  Serial.print("instantMove:");
   Serial.print(instantMove);
   Serial.print("\t");
-  Serial.print(movement);
+  Serial.print("averageMovement:");
+  Serial.print(averageMovement);
+  Serial.print("\t");
+  Serial.print("averagePeak:");
+  Serial.print(averagePeak);
+  Serial.print("\t");
+  Serial.print("satiety:");
+  Serial.print(satiety);
   
   Serial.println();
   //delay(500);
