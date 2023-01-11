@@ -76,13 +76,19 @@ void loop() {
     averagePeak = max(averagePeak, averageMovement);
 
     // Movement increase satiety
-    float satietyIncreaseSpeed = 200;
+    float satietyIncreaseSpeed = 20;
     satiety += instantMove * satietyIncreaseSpeed * deltaTime;
+
+    // Upper limit of satietey
+    satiety = min(1000, satiety);
 
     // Time decrease satiety
     float satietyDecreaseSpeed = 10; // unités / seconde
     satiety = max(0, satiety - satietyDecreaseSpeed * deltaTime);
     
+    // TODO: Handle the satiety levels to trigger things
+    
+
   
     accPrev = acc;
   }
